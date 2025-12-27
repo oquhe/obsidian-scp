@@ -1,0 +1,81 @@
+
+
+
+.scp.full-input {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 5px;
+  flex: 0 0 100%;
+}
+.scp.input {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 5px;
+  padding: 10px;
+  height: 20px;
+  flex: 1 0 10%;
+}
+.scp.short-input {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 5px;
+  padding: 10px;
+  height: 20px;
+  flex: 0 0 50px;
+}
+
+.scp.scroller {
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 50px;
+  max-height: 50%;
+  height: auto;
+  box-sizing: border-box;
+}
+.scp.scroller > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.scp.cmdr {
+  border: var(--prompt-border-width) solid var(--prompt-border-color);
+  border-radius: var(--radius-l);
+  box-shadow: var(--shadow-l);
+  backdrop-filter: blur(10px);
+  background-color: transparent;
+  width: 80%;
+  max-height: 80%;
+  margin: 0px auto;
+  position: absolute;
+}
+.scp.cmdr-container {
+  overflow-y: auto;
+  height: 100%;
+  width: 100%;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+.scp.cmdr-input {
+  background-color: transparent;
+}
+
+
+
+.scp.setting-inline {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding: 8px 0px;
+  border-top-width: var(--border-width);
+  border-top-style: solid;
+  border-top-color: var(--background-modifier-border);
+  flex: 0 0 100%;
+}
+.scp.setting-inline > .setting-item-info {
+  flex: auto;
+}
+.scp.setting-inline > .setting-item-control {
+  flex: auto;
+}
+
