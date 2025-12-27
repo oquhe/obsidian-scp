@@ -1,36 +1,40 @@
                                  Apache License
-                           Version 2.0, January 2004
+                           Version 2.0, January 20042.0 版，2004 年 1 月
                         http://www.apache.org/licenses/
 
-   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION使用、复制和分发条款及条件TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
-   1. Definitions.
+These terms and conditions govern the use, reproduction, and distribution of the materials provided by [Company Name]. By accessing or using the materials, you agree to be bound by these terms and conditions.
 
-      "License" shall mean the terms and conditions for use, reproduction,
-      and distribution as defined by Sections 1 through 9 of this document.
+1.
 
-      "Licensor" shall mean the copyright owner or entity authorized by
-      the copyright owner that is granting the License.
+   1. Definitions.   1. 定义。
 
-      "Legal Entity" shall mean the union of the acting entity and all
-      other entities that control, are controlled by, or are under common
-      control with that entity. For the purposes of this definition,
-      "control" means (i) the power, direct or indirect, to cause the
-      direction or management of such entity, whether by contract or
-      otherwise, or (ii) ownership of fifty percent (50%) or more of the
-      outstanding shares, or (iii) beneficial ownership of such entity.
+      "License" shall mean the terms and conditions for use, reproduction,“许可”应指使用、复制的条款和条件，"License" shall mean the terms and conditions for use and reproduction.
+      and distribution as defined by Sections 1 through 9 of this document.以及本文件第 1 至 9 节所定义的分发。
 
-      "You" (or "Your") shall mean an individual or Legal Entity
-      exercising permissions granted by this License.
+      "Licensor" shall mean the copyright owner or entity authorized by“许可方”应指版权所有者或经授权的实体。
+      the copyright owner that is granting the License.授予许可的版权所有者。
 
-      "Source" form shall mean the preferred form for making modifications,
-      including but not limited to software source code, documentation
-      source, and configuration files.
+      "Legal Entity" shall mean the union of the acting entity and all“法人实体”应指行为实体与其所有组成部分的联合体。
+      other entities that control, are controlled by, or are under common其他控制、受控制于或处于共同控制下的实体
+      control with that entity. For the purposes of this definition,与该实体的控制权。就本定义而言，
+      "control" means (i) the power, direct or indirect, to cause the“控制”指（一）直接或间接导致某事发生的权力
+      direction or management of such entity, whether by contract or对该实体的控制或管理，无论是通过合同还是其他方式
+      otherwise, or (ii) ownership of fifty percent (50%) or more of the否则，或者（ii）拥有百分之五十（50%）或以上的所有权Otherwise, or (ii) ownership of fifty percent (50%) or more of the
+      outstanding shares, or (iii) beneficial ownership of such entity.（i）已发行股份，或（iii）该实体的实益所有权。
 
-      "Object" form shall mean any form resulting from mechanical
-      transformation or translation of a Source form, including but
-      not limited to compiled object code, generated documentation,
-      and conversions to other media types.
+      "You" (or "Your") shall mean an individual or Legal Entity“您”（或“您的”）应指个人或法人实体。
+      exercising permissions granted by this License.行使本许可授予的权限。
+
+      "Source" form shall mean the preferred form for making modifications,“源代码”形式应指用于进行修改的首选形式，
+      including but not limited to software source code, documentation包括但不限于软件源代码、文档
+      source, and configuration files.源文件和配置文件。
+
+      "Object" form shall mean any form resulting from mechanical“物体”形式应指由机械加工产生的任何形式
+      transformation or translation of a Source form, including but对源代码形式的转换或翻译，包括但不限于
+      not limited to compiled object code, generated documentation,不限于编译后的目标代码、生成的文档，
+      and conversions to other media types.以及转换为其他媒体类型。
 
       "Work" shall mean the work of authorship, whether in Source or
       Object form, made available under the License, as indicated by a
@@ -41,12 +45,12 @@
       form, that is based on (or derived from) the Work and for which the
       editorial revisions, annotations, elaborations, or other modifications
       represent, as a whole, an original work of authorship. For the purposes
-      of this License, Derivative Works shall not include works that remain
+      of this License, Derivative Works shall not include works that remain根据本许可协议，衍生作品不应包括那些仍保持原样的作品。
       separable from, or merely link (or bind by name) to the interfaces of,
       the Work and Derivative Works thereof.
 
       "Contribution" shall mean any work of authorship, including
-      the original version of the Work and any modifications or additions
+      the original version of the Work and any modifications or additions作品的原始版本以及任何修改或补充内容
       to that Work or Derivative Works thereof, that is intentionally
       submitted to Licensor for inclusion in the Work by the copyright owner
       or by an individual or Legal Entity authorized to submit on behalf of
@@ -130,7 +134,7 @@
    5. Submission of Contributions. Unless You explicitly state otherwise,
       any Contribution intentionally submitted for inclusion in the Work
       by You to the Licensor shall be under the terms and conditions of
-      this License, without any additional terms or conditions.
+      this License, without any additional terms or conditions.本许可证，不附加任何其他条款或条件。
       Notwithstanding the above, nothing herein shall supersede or modify
       the terms of any separate license agreement you may have executed
       with Licensor regarding such Contributions.
@@ -186,7 +190,7 @@
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright [yyyy] [name of copyright owner]
+   Copyright 2025 oquhe
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
