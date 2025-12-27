@@ -453,6 +453,7 @@ class ChooseCommmandModal extends FuzzySuggestModal {
     this.onChooseItem = onChooseItem
     this.modalEl.className = 'scp cmdr'
     this.inputEl.className = 'scp cmdr-input'
+    this.resultContainerEl.className = 'scp cmdr-container'
   }
   getItems() {
     return this.commands
