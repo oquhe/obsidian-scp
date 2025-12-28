@@ -2,18 +2,18 @@
 Obsidian插件：简单命令面板
 
 ## 特点
-给命令添加**别名**
-更换命令的**显示名称**
-可快速查询又不影响显示的**隐藏文本**
-避免命令名称太长加入**描述文本**
-可使命令更灵活的**命令参数**
+- 给命令添加**别名**
+- 更换命令的**显示名称**
+- 可快速查询又不影响显示的**隐藏文本**
+- 避免命令名称太长加入**描述文本**
+- 可使命令更灵活的**命令参数**
 
 ## 别名语法
-若想检索原名，可以将原名加入到别名
-若想检索原名但不显示，可以将原名加入到别名的隐藏文本
-句首 `[xxx]` 中括号之间为隐藏文本
-句尾 `{xxx}` 大括号之间为描述文本
-查询语法中的字符可以显示但不能被检索
+- 若想检索原名，可以将原名加入到别名
+- 若想检索原名但不显示，可以将原名加入到别名的隐藏文本
+- 句首 `[xxx]` 中括号之间为隐藏文本
+- 句尾 `{xxx}` 大括号之间为描述文本
+- 查询语法中的字符可以显示但不能被检索
 
 ```例
 保存当前文件
@@ -25,7 +25,7 @@ Obsidian插件：简单命令面板
 ## 查询语法
 ### 空格
 空格之后的内容作为查询参数，多个参数用空格隔开
-通过 `app.plugins.plugins['s-c-panel'].q_args` 访问参数，命令执行后会清空参数
+通过 `app.plugins.plugins['s-c-panel'].q_args` 访问参数，命令执行后会清空参数Access the parameters through `app.plugins.plugins['s-c-panel'].q_args`. The parameters will be cleared after the command is executed.Access the parameters through `app.plugins.plugins['s-c-panel'].q_args`. The parameters will be cleared after the command is executed.
 
 ### ?/？半角或全角问号
 强制显示描述，取消替换名称
