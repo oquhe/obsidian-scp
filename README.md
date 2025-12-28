@@ -24,13 +24,13 @@ Obsidian插件：简单命令面板
 
 ## 查询语法
 ### 空格
-空格之后的内容作为查询参数，多个参数用空格隔开
-通过 `app.plugins.plugins['s-c-panel'].q_args` 访问参数，命令执行后会清空参数Access the parameters through `app.plugins.plugins['s-c-panel'].q_args`. The parameters will be cleared after the command is executed.Access the parameters through `app.plugins.plugins['s-c-panel'].q_args`. The parameters will be cleared after the command is executed.
+空格之后的内容作为查询参数，多个参数用空格隔开<br>
+通过 `app.plugins.plugins['s-c-panel'].q_args` 访问参数，命令执行后会清空参数
 
 ### ?/？半角或全角问号
-强制显示描述，取消替换名称
+强制显示描述，取消替换名称<br>
 可以在空格前的任意位置
 
 ### !/！ 半角或全角感叹号
-强制显示隐藏
+强制显示隐藏<br>
 可以在空格前的任意位置
