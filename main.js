@@ -21,7 +21,7 @@ const DEFAULT_SETTINGS = {
   cmdrScrollIntoView: false,
   cmdrDelay: 5,
   cmdrTurn: true,
-  cmdrShowAlias: true,
+  cmdrShowDesc: true,
   cmdrAliasAsName: false,
   cmdrAutoClose: false,
   commandAlias: {},
@@ -29,6 +29,7 @@ const DEFAULT_SETTINGS = {
 
 // 插件主体
 exports.default = class ScpPlugin extends Plugin {
+  q_args = [] // 查询参数
   async onload() {
     await this.loadSettings()
     this.commandModal = null
@@ -42,7 +43,6 @@ exports.default = class ScpPlugin extends Plugin {
         if (this.commandModal) return
         // 尝试滚动获取更好的视野
         if (this.settings.cmdrScrollIntoView) {
-          console.log('滚动')
           let editor = this.app.workspace.activeEditor.editor
           let cursor = editor.getCursor()
           editor.scrollIntoView(
@@ -58,22 +58,13 @@ exports.default = class ScpPlugin extends Plugin {
         new CommandModal(this.app, this).open()
       },
     })
-    this.addCommand({
-      id: 'scp-cs',
-      name: '测试',
-      editorCallback: (editor, view) => {
-        let obj = scpViewPlugin
-        console.log(obj)
-        suggestAllMembers(this.app, obj)
-      }
-    })
     
+    /*
     // 布局加载完成时
     this.app.workspace.onLayoutReady(() => {
-      
+      console.log(app.plugins.plugins['s-c-panel'].q_args)
     })
-    
-    
+    */
     /*
     // 添加Ribbon（左侧边栏）
     this.addRibbonIcon("circle", "Click me", () => {
@@ -122,6 +113,32 @@ class ScpViewPlugin {
 const scpViewPlugin = ViewPlugin.fromClass(ScpViewPlugin)
 exports.scpViewPlugin= scpViewPlugin
 
+// 别名的一些静态方法
+class Alias {
+  static getHide(alias) {
+    const match = str.match(/^\[([^\]]+)\]/)
+    return match ? match[1].trim() : ''
+  }
+  static getName(alias) {
+    return alias.replace(/^\[[^\]]*\](.*?)\{[^{}]*\}$/, '$1').trim()
+  }
+  static getDesc(alias) {
+    const match = str.match(/\{([^{}]+)\}$/)
+    return match ? match[1].trim() : ''
+  }
+  static hideAfter(alias) {
+    if (alias.startsWith('[')) {
+      return alias.indexOf(']') + 1
+    }
+    return 0
+  }
+  static descBefore(alias) {
+    if (alias.endsWith('}')) {
+      return alias.lastIndexOf('{')
+    }
+    return alias.length
+  }
+}
 
 // 设置面板
 class SCPSettingTab extends PluginSettingTab {
@@ -212,7 +229,7 @@ class SCPSettingTab extends PluginSettingTab {
       .then(s=>s.settingEl.className = 'scp setting-inline')
     new Setting(containerEl)
       .setName('上方时翻转')
-      .setDesc(`命令面板位于光标上方时从下往上放置选项，默认：${DEFAULT_SETTINGS.cmdrTurn}`)
+      .setDesc(`命令面板位于光标上方时从下往上放置建议项，默认：${DEFAULT_SETTINGS.cmdrTurn}`)
       .addToggle(cp => cp
         .setValue(this.plugin.settings.cmdrTurn)
         .onChange(async (value) => {
@@ -221,18 +238,18 @@ class SCPSettingTab extends PluginSettingTab {
         })
       )
     new Setting(containerEl)
-      .setName('显示别名')
-      .setDesc(`存在别名时，别名作为描述显示在命令面板上，默认：${DEFAULT_SETTINGS.cmdrShowAlias}`)
+      .setName('显示描述')
+      .setDesc(`结尾大括号内容作为描述显示，若没有则别名作为描述显示，默认：${DEFAULT_SETTINGS.cmdrShowDesc}`)
       .addToggle(cp => cp
-        .setValue(this.plugin.settings.cmdrShowAlias)
+        .setValue(this.plugin.settings.cmdrShowDesc)
         .onChange(async (value) => {
-          this.plugin.settings.cmdrShowAlias = value
+          this.plugin.settings.cmdrShowDesc = value
           this.plugin.saveSettings()
         })
       )
     new Setting(containerEl)
-      .setName('别名替换名称')
-      .setDesc(`存在别名时，别名替换名称显示在命令面板上，默认：${DEFAULT_SETTINGS.cmdrAliasAsName}`)
+      .setName('替换名称')
+      .setDesc(`别名不作为描述显示，而是作为名称显示，默认：${DEFAULT_SETTINGS.cmdrAliasAsName}`)
       .addToggle(cp => cp
         .setValue(this.plugin.settings.cmdrAliasAsName)
         .onChange(async (value) => {
@@ -250,14 +267,24 @@ class SCPSettingTab extends PluginSettingTab {
           this.plugin.saveSettings()
         })
       )
+    containerEl.createEl('h2', {text: '查询'})
+    new Setting(containerEl)
+      .setName('查询语法')
+      .setDesc(this.createDF(`<span>
+空格 空格之后的内容作为查询参数，多个参数用空格隔开<br>
+&emsp;&emsp; 通过<code>app.plugins.plugins['s-c-panel'].q_args</code>访问参数，命令执行后会清空参数<br>
+?/？ 强制显示描述，取消替换名称<br>
+!/！ 强制显示隐藏
+      </span>`))
+      .then(s => s.descEl.style.userSelect='text')
     containerEl.createEl('h2', {text: '命令别名'})
     new Setting(containerEl)
       .setDesc(this.createDF(`<span>
 先添加命令，添加后才能编辑别名。<br>
-别名用于在简单命令面板作为描述或筛选文本。<br>
-如果想同时使用原名和别名，应在别名中放入原名。<br>
-不能有空格，推荐用“|”、“-”或“丨(gun)”等作为分割符。<br>
-例：save|保存当前文件<br>
+别名用于在简单命令面板作为名称/描述文本。<br>
+使用结尾大括号可指定描述文本。<br>
+开头中括号为隐藏，不会显示在面板上<br>
+例：[save]保存{保存当前文件}<br>
       </span>`))
       .addButton(button => button
         .setButtonText('添加')
@@ -287,7 +314,6 @@ class SCPSettingTab extends PluginSettingTab {
               this.app, '编辑', command.name,
               this.plugin.settings.commandAlias[command.id],
               value => {
-                value = value.replace(/\s+/g, '')
                 this.plugin.settings.commandAlias[command.id] = value
                 this.plugin.saveSettings()
                 new Notice('重进配置页生效')
@@ -347,8 +373,6 @@ class SCPSettingTab extends PluginSettingTab {
             text.inputEl.className = 'scp input'
           })
           .onChange(async (value) => {
-            value = value.replace(/\s+/g, '')
-            text.inputEl.value = value
             alias[key] = value
             this.plugin.saveSettings()
           })
@@ -364,10 +388,11 @@ class SCPSettingTab extends PluginSettingTab {
 全宽输入框 .scp.full-input<br>
 输入框 .scp.input<br>
 短输入框 .scp.short-input<br>
+描述文本 .scp.desc<br>
 滚动容器 .scp.scroller<br>
 单行配置项 .scp.setting-inline<bt>
       </span>`))
-      .then(cp => cp.descEl.style.userSelect='auto')
+      .then(s => s.descEl.style.userSelect='text')
   }
 }
 
@@ -476,6 +501,9 @@ class CommandModal extends FuzzySuggestModal {
     this.reLine = null
     this.alias = this.plugin.settings.commandAlias
     this.isPop = false
+    this.q_args = []
+    this.forceShowDesc = false
+    this.forceShowHide = false
     
     let el = document.createElement('div')
     this.modalEl = el
@@ -501,19 +529,26 @@ class CommandModal extends FuzzySuggestModal {
   getSuggestions(query) {
     let arr = query.split(' ')
     this.q_args = arr.slice(1)
-    return super.getSuggestions(arr[0])
+    let q_query = arr[0]
+    this.forceShowDesc = /[?？]/.test(q_query)
+    q_query = q_query.replace(/[?？]/g, '')
+    this.forceShowHide = /[!！]/.test(q_query)
+    q_query = q_query.replace(/[!！]/g, '')
+    return super.getSuggestions(q_query)
   }
   onChooseItem(command, evt) {
     this.component.unload()
     this.controller.abort()
     this.observer?.disconnect()
     if (this.reLine) this.reLine()
-    command.q_args = this.q_args.join(' ')
+    this.plugin.q_args = this.q_args
     this.app.commands.executeCommand(command)
+    /*
     if (!command.name.includes('重复上一个命令')) {
       window.sessionStorage.setItem('LastCommand', command.id)
     }
-    command.q_args = null
+    */
+    this.plugin.q_args = []
     this.close()
   }
   onNoSuggestion() {
@@ -522,34 +557,121 @@ class CommandModal extends FuzzySuggestModal {
       this.close()
     }
   }
-  renderSuggestion(fm, el) {
-    let strs = []
-    let text = this.getItemText(fm.item)
-    let cur = 0
-    fm.match.matches.forEach(match => {
-      strs.push(text.slice(cur, match[0]))
-      strs.push(text.slice(...match))
+  matchesDivide(matches, m) {
+    let len = matches.length
+    for(var i=0;i<len;i++) {
+      let [s, e] = matches[i]
+      if (m <= s) {
+        return [
+          matches.slice(0, i),
+          matches.slice(i, len)
+        ]
+      }
+      if (m < e) {
+        return [
+          [...matches.slice(0, i), [s, m]],
+          [[m, e], ...matches.slice(i, len)]
+        ]
+      }
+    }
+    return [matches, []]
+  }
+  // 通过 matches 获取 ss
+  // Ss: 字符串数组，未匹配字段、匹配字段，交替放入
+  msToSections(ms, text, start, end) {
+    let ss = []
+    let cur = start
+    ms.forEach(match => {
+      ss.push(text.slice(cur, match[0]))
+      ss.push(text.slice(match[0], match[1]))
       cur = match[1]
     })
-    strs.push(text.slice(cur))
-    let line
-    if ((fm.item.id in this.alias) && !this.plugin.settings.cmdrAliasAsName) {
-      el.createEl('div', {text: fm.item.name})
-      if (!this.plugin.settings.cmdrShowAlias) {
-        return
-      }
-      line = el.createEl('div')
-      line.style['font-size'] = 'var(--font-ui-smaller)'
-      line.style['color'] = 'var(--text-muted)'
-    } else {
-      line = el.createEl('div')
+    ss.push(text.slice(cur, end))
+    return ss
+  }
+  // 添加 Ss span 元素，匹配字段使用强调色
+  addSections(el, ss, trim) {
+    if (ss.length===0) return
+    if (trim) {
+      ss[0] = ss[0].slice(1)
+      ss[ss.length-1] = ss.at(-1).slice(0, -1)
     }
-    for(let i=0; i<strs.length-1; i+=2) {
-      line.createEl('span', {text: strs[i]})
-      let keyEl = line.createEl('span', {text: strs[i+1]})
+    for(let i=0; i<ss.length-1; i+=2) {
+      el.createEl('span', {text: ss[i]})
+      let keyEl = el.createEl('span', {text: ss[i+1]})
       keyEl.style.color = 'var(--text-accent)'
     }
-    line.createEl('span', {text: strs.at(-1)})
+    el.createEl('span', {text: ss.at(-1)})
+  }
+  // 渲染建议项
+  renderSuggestion(fm, el) {
+    let text = this.getItemText(fm.item)
+    let matches = fm.match.matches
+    let hideAfter = 0
+    let descBefore = text.length
+    if (fm.item.id in this.alias) {
+      const alias = this.alias[fm.item.id]
+      hideAfter = Alias.hideAfter(alias)
+      descBefore = Alias.descBefore(alias)
+    }
+    let [hideMs, rightMs] = this.matchesDivide(matches, hideAfter)
+    let [nameMs, descMs] = this.matchesDivide(rightMs, descBefore)
+    // alias: [hide]_n_ame_{_desc}
+    // Ss: 未匹配字段、匹配字段，交替放入
+    let hideSs = this.msToSections(hideMs, text, 0, hideAfter)
+    let nameSs = this.msToSections(nameMs, text, hideAfter, descBefore)
+    let descSs = this.msToSections(descMs, text, descBefore, text.length)
+    
+    let nameEl = el.createEl('div')
+    // 无别名
+    if (!(fm.item.id in this.alias)) {
+      this.addSections(nameEl, nameSs)
+      return
+    }
+    // 有描述
+    if (descSs.length!==0) {
+      this.addSections(nameEl, nameSs)
+      // 显示描述
+      if (this.forceShowDesc || this.plugin.settings.cmdrShowDesc) {
+        let descEl = el.createEl('div')
+        descEl.className = 'scp desc'
+        if (this.forceShowHide) { // 强制显示隐藏
+          this.addSections(descEl, hideSs)
+        }
+        this.addSections(descEl, descSs, true)
+      }
+      return
+    }
+    // 无描述，强制别名作为描述
+    if (this.forceShowDesc) {
+      el.createEl('div', {text: fm.item.name})
+      let descEl = el.createEl('div')
+      descEl.className = 'scp desc'
+      if (this.forceShowHide) { // 强制显示隐藏
+        this.addSections(descEl, hideSs)
+      }
+      this.addSections(descEl, descSs)
+    }
+    // 无描述，别名替换名称
+    if (this.plugin.settings.cmdrAliasAsName) {
+      if (this.forceShowHide) { // 强制显示隐藏
+        this.addSections(nameEl, hideSs)
+      }
+      this.addSections(nameEl, nameSs)
+      return
+    }
+    el.createEl('div', {text: fm.item.name})
+    // 无描述，不替换名称，不显示描述
+    if (!this.plugin.settings.cmdrShowDesc) {
+      return
+    }
+    // 无描述，不替换名称，显示描述
+    let descEl = el.createEl('div')
+    descEl.className = 'scp desc'
+    if (this.forceShowHide) { // 强制显示隐藏
+      this.addSections(descEl, hideSs)
+    }
+    this.addSections(descEl, descSs)
   }
   open() {
     let el = this.modalEl

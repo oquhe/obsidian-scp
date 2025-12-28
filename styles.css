@@ -21,6 +21,11 @@
   flex: 0 0 50px;
 }
 
+.scp.desc {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
 .scp.scroller {
   overflow-y: auto;
   margin: 0;
@@ -44,7 +49,6 @@
   backdrop-filter: blur(10px);
   background-color: transparent;
   width: 80%;
-  height: auto;
   margin: 0px auto;
   position: absolute;
 }
