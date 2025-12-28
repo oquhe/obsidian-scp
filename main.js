@@ -536,21 +536,6 @@ class CommandModal extends FuzzySuggestModal {
     q_query = q_query.replace(/[!！]/g, '')
     return super.getSuggestions(q_query)
   }
-  onChooseItem(command, evt) {
-    this.component.unload()
-    this.controller.abort()
-    this.observer?.disconnect()
-    if (this.reLine) this.reLine()
-    this.plugin.q_args = this.q_args
-    this.app.commands.executeCommand(command)
-    /*
-    if (!command.name.includes('重复上一个命令')) {
-      window.sessionStorage.setItem('LastCommand', command.id)
-    }
-    */
-    this.plugin.q_args = []
-    this.close()
-  }
   onNoSuggestion() {
     super.onNoSuggestion()
     if (this.plugin.settings.cmdrAutoClose) {
@@ -684,7 +669,11 @@ class CommandModal extends FuzzySuggestModal {
     let raw_cursor = raw_editor.getCursor()
     let raw_line = raw_editor.getLine(raw_cursor.line)
     let raw_front = raw_line.slice(0, raw_cursor.ch)
-    this.reLine = () => {
+    // 恢复函数
+    this.reLine = function() {
+      this.component.unload()
+      this.controller.abort()
+      this.observer?.disconnect()
       let new_line = raw_editor.getLine(raw_cursor.line)
       let front = new_line.slice(0, raw_cursor.ch)
       if (front===raw_front) {
@@ -758,11 +747,10 @@ class CommandModal extends FuzzySuggestModal {
       let line = editor.getLine(cursor.line)
       let front = line.slice(0, cursor.ch)
       if (cursor.line==raw_cursor.line+1) {
-        if (front==='') { // 换行
+        if (front==='') { // 换行、回车键
           let fms = this.getSuggestions(this.inputEl.value)
           if (fms.length > 0) {
-            const cmd = fms[0].item
-            this.onChooseItem(cmd, null)
+            this.selectSuggestion(fms[0], null)
             return
           }
         }
@@ -779,6 +767,23 @@ class CommandModal extends FuzzySuggestModal {
     }))
     
   }
+  
+  selectSuggestion(value, evt) {
+    if (this.reLine) this.reLine()
+    this.reLine = null
+    this.plugin.q_args = this.q_args
+    this.close()
+    let command = value.item
+    console.log(command)
+    this.app.commands.executeCommand(command)
+    /*
+    if (!command.name.includes('重复上一个命令')) {
+      window.sessionStorage.setItem('LastCommand', command.id)
+    }
+    */
+    this.q_args = []
+    this.plugin.q_args = []
+  }
   close() {
     this.inputEl.value = ''
     this.inputEl.dispatchEvent(new Event('input'))
@@ -789,8 +794,8 @@ class CommandModal extends FuzzySuggestModal {
     this.component.unload()
     this.controller.abort()
     this.observer?.disconnect()
-    this.reLine = null
     el.isPop = false
+    this.reLine = null
     this.plugin.commandModal = null
   }
 }
