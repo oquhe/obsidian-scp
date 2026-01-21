@@ -3,9 +3,9 @@
 	"name": "Simple Command Panel",
 	"version": "1.0.1",
 	"minAppVersion": "1.5.0",
-	"description": "A command panel that includes aliases, descriptions, hidden content, parameters, and text commands. 包含别名、描述、隐藏内容、参数、文本命令的命令面板。",
+	"description": "A command panel that includes aliases, descriptions, hidden content, parameters, and text commands.",
 	"author": "oquhe",
-	"authorUrl": "https://github.com/oquhe/obsidian-scp",
+	"authorUrl": "https://github.com/oquhe",
 	"fundingUrl": "",
 	"isDesktopOnly": false
 }

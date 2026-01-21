@@ -513,21 +513,15 @@ class ScpSettingTab extends PluginSettingTab {
           new ChooseCommmandModal(this.app, this.getCommands(), (cmd, evt) => this.deleteAlias(cmd.id)).open()
         })
       )
-      /*
-      .then(view => {
-        view.controlEl.style.padding = '0'
-        view.controlEl.style.margin = '0'
-      })
-      */
+
     let view = new Setting(containerEl)
-    view.nameEl.style.display = 'none'
-    view.descEl.style.display = 'none'
-    view.infoEl.style.display = 'none'
+    view.infoEl.remove()
     let scrollEl = view.controlEl
     scrollEl.style.display = 'grid'
-    scrollEl.style.gridTemplateColumns = 'auto 30% auto'
+    scrollEl.style.gridTemplateColumns = '2em 1fr 1.5fr'
     scrollEl.style.gridAutoRows = '2rem'
     scrollEl.style.overflowY = 'auto'
+    scrollEl.style.width = '100%'
     scrollEl.style.maxHeight = '30vh'
     let aliases = this.plugin.settings.cmdAliases
     Object.keys(aliases).forEach(id => {
@@ -583,18 +577,6 @@ class ScpSettingTab extends PluginSettingTab {
           // todo
         })
       )
-    new Setting(containerEl).setName("自定义样式").setHeading()
-    new Setting(containerEl)
-      .setName('可以使用 CSS 代码片段修改样式')
-      .setDesc(this.createDF(`<span>
-插件元素 .scp<br>
-命令面板 .scp.cmdr<br>
-命令面板内容 .scp.cmdr-container<br>
-输入框 .scp.input<br>
-描述文本 .scp.desc<br>
-滚动容器 .scp.scroller<br>
-      </span>`))
-      .then(s => s.descEl.style.userSelect='text')
   }
 }
 
@@ -634,14 +616,18 @@ class YNModal extends Modal {
     this.onConfirm = onConfirm
   }
   onOpen() {
-    const { modalEl, nameEl } = this
+    const { modalEl } = this
     modalEl.empty()
     modalEl.style.padding = '2rem'
     modalEl.style.width = '25rem'
     
     new Setting(modalEl).setName(this.title).setHeading()
+    modalEl.appendChild(this.content)
     new Setting(modalEl)
-      .setName(this.content)
+      .then(v => {
+        v.infoEl.remove()
+        v.controlEl.style.border = 'none'
+      })
       .addButton(button => button
         .setButtonText('取消')
         .setCta()
@@ -666,7 +652,7 @@ class InputModal extends YNModal {
   onOpen() {
     const inputEl = document.createElement("input")
     inputEl.type = 'text'
-    inputEl.style.width = '21rem'
+    inputEl.style.width = '100%'
     inputEl.className = 'scp input'
     inputEl.value = this.value
     inputEl.onchange = (async () => {
