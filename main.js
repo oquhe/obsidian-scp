@@ -120,8 +120,8 @@ class ScpEditorSuggest extends EditorSuggest {
       textCmds.push({ id: null, name: name,
         callback: ()=>this.editorFromCursor((
           arr.at(-1)
-            .replace(/([^\\])\\n/g, '$1\n')
-            .replace(/\\([$\\])/g, '$1')
+            .replace(/([^\\]|^)\\n/g, '$1\n')
+            .replace(/([^\\]|^)\\([$\\])/g, '$1$2')
         ))
       })
     })
