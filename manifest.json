@@ -1,11 +1,11 @@
 {
 	"id": "s-c-panel",
 	"name": "简单命令面板",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.5.0",
-	"description": "简单命令面板，一键打开，支持模糊搜索",
+	"description": "简单命令面板，为命令添加别名、描述、隐藏内容、参数，添加文本命令",
 	"author": "oquhe",
-	"authorUrl": "",
+	"authorUrl": "https://github.com/oquhe/obsidian-scp",
 	"fundingUrl": "",
 	"isDesktopOnly": false
 }

@@ -1,24 +1,7 @@
 
-
-
-.scp.full-input {
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 5px;
-  flex: 0 0 100%;
-}
 .scp.input {
   border: 1px solid var(--background-modifier-border);
   border-radius: 5px;
-  padding: 10px;
-  height: 20px;
-  flex: 1 0 10%;
-}
-.scp.short-input {
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 5px;
-  padding: 10px;
-  height: 20px;
-  flex: 0 0 50px;
 }
 
 .scp.desc {
@@ -62,24 +45,5 @@
 }
 .scp.cmdr-input {
   background-color: transparent;
-}
-
-
-
-.scp.setting-inline {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  padding: 8px 0px;
-  border-top-width: var(--border-width);
-  border-top-style: solid;
-  border-top-color: var(--background-modifier-border);
-  flex: 0 0 100%;
-}
-.scp.setting-inline > .setting-item-info {
-  flex: auto;
-}
-.scp.setting-inline > .setting-item-control {
-  flex: auto;
 }
 
