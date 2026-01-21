@@ -28,7 +28,6 @@ const DEFAULT_SETTINGS = {
  * 插件主体
  */
 exports.default = class ScpPlugin extends Plugin {
-  settings
   q_args = [] // 查询参数
   
   async onload() {
@@ -39,7 +38,7 @@ exports.default = class ScpPlugin extends Plugin {
       name: "打开",
       icon: "app-window",
       editorCallback: (editor, ctx) => {
-        editorSuggest.cmdTrigger(editor, ctx)
+        this?.editorSuggest.cmdTrigger(editor, ctx)
       },
     })
     
@@ -48,8 +47,10 @@ exports.default = class ScpPlugin extends Plugin {
       // 添加配置面板
       this.addSettingTab(new ScpSettingTab(this.app, this))
       // 注册编辑建议
-      if (this.settings.triggers.length)
-        this.registerEditorSuggest(new ScpEditorSuggest(app, this))
+      if (this.settings.triggers.length) {
+        this.editorSuggest = new ScpEditorSuggest(app, this)
+        this.registerEditorSuggest(this.editorSuggest)
+      }
     })
   }
   onunload() {
@@ -227,7 +228,10 @@ class ScpEditorSuggest extends EditorSuggest {
     this.showHide = /[!！]/.test(q_query)
     q_query = q_query.replace(/[!！]/g, '')
     let suggestions = this.fuzzyMatch.getSuggestions(q_query)
-    if (!suggestions.length && !this.plugin.settings.cmdrAutoClose) suggestions = [this.blankSuggestion]
+    if (!suggestions.length && !this.plugin.settings.cmdrAutoClose) suggestions = [{
+      item: this.blankCmd,
+      match: { matches: [] }
+    }]
     return suggestions
   }
   selectSuggestion(fm, evt) {
