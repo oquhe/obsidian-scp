@@ -24,6 +24,73 @@ const DEFAULT_SETTINGS = {
   textAliases: [],
 }
 
+const I18N = {
+  '打开': {
+    en: 'Open'
+  },
+  '确认': {
+    en: 'Yes',
+  },
+  '取消': {
+    en: 'No',
+  },
+  '未找到命令': {
+    en: 'Command not found',
+  },
+  '编辑': {
+    en: 'Edit'
+  },
+  '添加': {
+    en: 'Add'
+  },
+  '删除': {
+    en: 'Delete'
+  },
+  '默认：': {
+    en: 'Default: '
+  },
+  '触发符': {
+    en: 'Trigger symbol'
+  },
+  '显示描述': {
+    en: 'Show desc'
+  },
+  '无选项自动关闭': {
+    en: 'Auto close without options'
+  },
+  '格式说明：': {
+    en: 'Format specifies: '
+  },
+  '示例：': {
+    en: 'Example: '
+  },
+  '别名管理': {
+    en: 'Manage aliases'
+  },
+  '命令别名': {
+    en: 'Give commands aliases'
+  },
+  '文本别名': {
+    en: 'Give texts aliases'
+  },
+  '检索不到命令时自动关闭，': {
+    en: ''
+  },
+}
+function i18n(text) {
+  const translation = I18N?.[text]
+  if (!translation) return text
+  switch (i18next.language) {
+    case 'zh':
+      return text
+    case 'zh-TW':
+      return translation?.['zh-TW'] ?? text
+    default:
+      return translation?.[i18next.language] ?? translation?.en ?? text
+  }
+}
+
+
 /**
  * 插件主体
  */
@@ -34,9 +101,9 @@ exports.default = class ScpPlugin extends Plugin {
     await this.loadSettings()
     // 添加命令
     this.addCommand({
-      id: "s-c-panel",
-      name: "打开",
-      icon: "app-window",
+      id: 's-c-panel',
+      name: i18n("打开"),
+      icon: 'app-window',
       editorCallback: (editor, ctx) => {
         this?.editorSuggest.cmdTrigger(editor, ctx)
       },
@@ -73,7 +140,7 @@ exports.default = class ScpPlugin extends Plugin {
 
 /*
 function escape(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 */
 
@@ -83,7 +150,7 @@ function escape(string) {
 class ScpEditorSuggest extends EditorSuggest {
   blankCmd = {
     id: null,
-    name: "未找到命令",
+    name: i18n("未找到命令"),
     callback: ()=>{}
   }
   getItems() {
@@ -242,7 +309,7 @@ class ScpEditorSuggest extends EditorSuggest {
     if (cmd.id) this.app.commands.executeCommand(cmd)
     else cmd.callback()
     /*
-    if (!cmd.name.includes('重复上一个命令')) {
+    if (!cmd.name.includes(i18n("重复上一个命令"))) {
       window.sessionStorage.setItem('LastCommand', cmd.id)
     }
     */
@@ -411,10 +478,10 @@ class ScpSettingTab extends PluginSettingTab {
     const { containerEl } = this
     containerEl.empty()
     new Setting(containerEl)
-      .setName('触发符')
+      .setName(i18n("触发符"))
       .setDesc(this.createDF(`<span>
 打开面板的触发字符，可设置多个，一行一个。<br>
-无则只能通过命令触发。默认：${DEFAULT_SETTINGS.triggers}
+无则只能通过命令触发。${i18n("默认：")}${DEFAULT_SETTINGS.triggers}
       </span>`))
       .addTextArea(text => text
         .setValue(this.plugin.settings.triggers.join('\n'))
@@ -433,8 +500,8 @@ class ScpSettingTab extends PluginSettingTab {
         })
       )
     new Setting(containerEl)
-      .setName('显示描述')
-      .setDesc(`默认：${DEFAULT_SETTINGS.cmdrShowDesc}`)
+      .setName(i18n("显示描述"))
+      .setDesc(`${i18n("默认：")}${DEFAULT_SETTINGS.cmdrShowDesc}`)
       .addToggle(cp => cp
         .setValue(this.plugin.settings.cmdrShowDesc)
         .onChange(async (value) => {
@@ -443,8 +510,8 @@ class ScpSettingTab extends PluginSettingTab {
         })
       )
     new Setting(containerEl)
-      .setName('无选项自动关闭')
-      .setDesc(`检索不到命令时自动关闭，默认：${DEFAULT_SETTINGS.cmdrAutoClose}`)
+      .setName(i18n("无选项自动关闭"))
+      .setDesc(`${i18n("检索不到命令时自动关闭，")}${i18n("默认：")}${DEFAULT_SETTINGS.cmdrAutoClose}`)
       .addToggle(cp => cp
         .setValue(this.plugin.settings.cmdrAutoClose)
         .onChange(async (value) => {
@@ -452,9 +519,9 @@ class ScpSettingTab extends PluginSettingTab {
           this.plugin.saveSettings()
         })
       )
-    new Setting(containerEl).setName("命令查询").setHeading()
+    new Setting(containerEl).setName(i18n("命令查询")).setHeading()
     new Setting(containerEl)
-      .setName('查询语法')
+      .setName(i18n("查询语法"))
       .setDesc(this.createDF(`<span>
 空格 首空格后内容作为查询参数，空格分隔参数<br>
 查询参数通过<code>app.plugins.plugins['s-c-panel'].q_args</code>访问<br>
@@ -462,15 +529,15 @@ class ScpSettingTab extends PluginSettingTab {
 !/！ 强制显示隐藏
       </span>`))
       .then(s => s.descEl.style.userSelect='text')
-    new Setting(containerEl).setName("别名管理").setHeading()
+    new Setting(containerEl).setName(i18n("别名管理")).setHeading()
     new Setting(containerEl)
-      .setName('命令别名')
+      .setName(i18n("命令别名"))
       .setDesc(this.createDF(`<span>
-格式说明：<code>[隐藏部分]显示名称{描述内容}</code><br>
-示例：<code>[save]保存当前文件{保存当前编辑的文件}</code>
+${i18n("格式说明：")}<code>[隐藏部分]显示名称{描述内容}</code><br>
+${i18n("示例：")}<code>[save]保存当前文件{保存当前编辑的文件}</code>
       </span>`))
       .addButton(button => button
-        .setButtonText('添加')
+        .setButtonText(i18n("添加"))
         .setCta()
         .onClick(async () => {
           let arr = this.app.commands.listCommands()
@@ -489,12 +556,12 @@ class ScpSettingTab extends PluginSettingTab {
         })
       )
       .addButton(button => button
-        .setButtonText('编辑')
+        .setButtonText(i18n("编辑"))
         .setCta()
         .onClick(async () => {
           new ChooseCommmandModal(this.app, this.getCommands(), (command, evt) => {
             new InputModal(
-              this.app, '编辑', command.name,
+              this.app, i18n("编辑"), command.name,
               this.plugin.settings.cmdAliases[command.id],
               value => {
                 this.plugin.settings.cmdAliases[command.id] = value
@@ -506,7 +573,7 @@ class ScpSettingTab extends PluginSettingTab {
         })
       )
       .addButton(button => button
-        .setButtonText('删除')
+        .setButtonText(i18n("删除"))
         .setCta()
         .setWarning()
         .onClick(async () => {
@@ -531,7 +598,7 @@ class ScpSettingTab extends PluginSettingTab {
       delBtnEl.textContent = 'Х'
       delBtnEl.type = 'button'
       delBtnEl.onclick = (() => {
-        new YNModal(app, '确认删除？', cmd.name, () => this.deleteAlias(id)).open()
+        new YNModal(app, i18n("确认删除？"), cmd.name, () => this.deleteAlias(id)).open()
       })
       delBtnEl.style.height = '2rem'
       delBtnEl.style.width = '2rem'
@@ -555,11 +622,11 @@ class ScpSettingTab extends PluginSettingTab {
     })
     
     new Setting(containerEl)
-      .setName('文本别名')
+      .setName(i18n("文本别名"))
       .setDesc(this.createDF(`<span>
 一行一个，触发文本替换，替换文本前后不应有空格<br>
 替换文本中可用<code>\\$ \\n \\\\</code>转义<br>
-格式说明：<code>[隐藏部分]显示名称{描述内容} $替换文本</code>
+${i18n("格式说明：")}<code>[隐藏部分]显示名称{描述内容} $替换文本</code>
       `))
       .addTextArea(text => text
         .setValue(this.plugin.settings.textAliases.join('\n'))
@@ -608,7 +675,7 @@ class YNModal extends Modal {
     content = Array.isArray(content) ? content : [content]
     const fragment = new DocumentFragment()
     content.forEach(line => {
-      const p = document.createElement("p")
+      const p = document.createElement('p')
       p.textContent = line
       fragment.appendChild(p)
     })
@@ -629,12 +696,12 @@ class YNModal extends Modal {
         v.controlEl.style.border = 'none'
       })
       .addButton(button => button
-        .setButtonText('取消')
+        .setButtonText(i18n("取消"))
         .setCta()
         .onClick(()=>this.close())
       )
      .addButton(button => button
-        .setButtonText('确认')
+        .setButtonText(i18n("确认"))
         .setCta().setWarning()
         .onClick(()=>{
           this.close()
@@ -650,7 +717,7 @@ class InputModal extends YNModal {
     this.value = defaultValue
   }
   onOpen() {
-    const inputEl = document.createElement("input")
+    const inputEl = document.createElement('input')
     inputEl.type = 'text'
     inputEl.style.width = '100%'
     inputEl.className = 'scp input'
