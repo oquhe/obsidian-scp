@@ -6,11 +6,11 @@ const {
   Plugin,
   PluginSettingTab,
   Setting,
+  SettingGroup,
+  ExtraButtonComponent,
   Notice,
   Modal,
   FuzzySuggestModal,
-  ButtonComponent,
-  Component,
   MarkdownView,
   EditorSuggest,
 } = require('obsidian')
@@ -75,6 +75,12 @@ const I18N = {
   },
   '检索不到命令时自动关闭，': {
     en: ''
+  },
+  '[隐藏部分]显示名称{描述内容}': {
+    en: '[hidden]displayed{desc}'
+  },
+  '替换文本': {
+    en: 'replacement'
   },
 }
 function i18n(text) {
@@ -477,156 +483,152 @@ class ScpSettingTab extends PluginSettingTab {
   display() {
     const { containerEl } = this
     containerEl.empty()
-    new Setting(containerEl)
-      .setName(i18n("触发符"))
-      .setDesc(this.createDF(`<span>
-打开面板的触发字符，可设置多个，一行一个。<br>
-无则只能通过命令触发。${i18n("默认：")}${DEFAULT_SETTINGS.triggers}
-      </span>`))
-      .addTextArea(text => text
-        .setValue(this.plugin.settings.triggers.join('\n'))
-        .onChange(async (value) => {
-          let arr = value.split('\n')
-          this.plugin.settings.triggers = arr.filter(v=>v)
-          this.plugin.saveSettings()
-        })
-        .then(() => {
-          text.inputEl.className = 'scp input'
-          text.inputEl.style.width = '100%'
-          text.inputEl.style.height = 'auto'
-          text.inputEl.style.minHeight = '2em'
-          // text.inputEl.style.resize = 'none'
-          // todo
-        })
-      )
-    new Setting(containerEl)
-      .setName(i18n("显示描述"))
-      .setDesc(`${i18n("默认：")}${DEFAULT_SETTINGS.cmdrShowDesc}`)
-      .addToggle(cp => cp
-        .setValue(this.plugin.settings.cmdrShowDesc)
-        .onChange(async (value) => {
-          this.plugin.settings.cmdrShowDesc = value
-          this.plugin.saveSettings()
-        })
-      )
-    new Setting(containerEl)
-      .setName(i18n("无选项自动关闭"))
-      .setDesc(`${i18n("检索不到命令时自动关闭，")}${i18n("默认：")}${DEFAULT_SETTINGS.cmdrAutoClose}`)
-      .addToggle(cp => cp
-        .setValue(this.plugin.settings.cmdrAutoClose)
-        .onChange(async (value) => {
-          this.plugin.settings.cmdrAutoClose = value
-          this.plugin.saveSettings()
-        })
-      )
-    new Setting(containerEl).setName(i18n("命令查询")).setHeading()
-    new Setting(containerEl)
-      .setName(i18n("查询语法"))
-      .setDesc(this.createDF(`<span>
-空格 首空格后内容作为查询参数，空格分隔参数<br>
-查询参数通过<code>app.plugins.plugins['s-c-panel'].q_args</code>访问<br>
-?/？ 强制显示描述<br>
-!/！ 强制显示隐藏
-      </span>`))
-      .then(s => s.descEl.style.userSelect='text')
-    new Setting(containerEl).setName(i18n("别名管理")).setHeading()
-    new Setting(containerEl)
-      .setName(i18n("命令别名"))
-      .setDesc(this.createDF(`<span>
-${i18n("格式说明：")}<code>[隐藏部分]显示名称{描述内容}</code><br>
-${i18n("示例：")}<code>[save]保存当前文件{保存当前编辑的文件}</code>
-      </span>`))
-      .addButton(button => button
-        .setButtonText(i18n("添加"))
-        .setCta()
-        .onClick(async () => {
-          let arr = this.app.commands.listCommands()
-          let aliases = this.plugin.settings.cmdAliases
-          let commands = arr.reduce((acc, command) => {
-            if (!Object.keys(aliases).includes(command.id)) {
-              acc.push(command)
-            }
-            return acc
-          }, [])
-          new ChooseCommmandModal(this.app, commands, (command, evt) => {
-            this.plugin.settings.cmdAliases[command.id] = command.name
+    new SettingGroup(containerEl)
+      .addSetting(setting=>setting.setName(i18n("触发符"))
+        .setDesc(this.createDF(`<span>
+  打开面板的触发字符，可设置多个，一行一个。<br>
+  无则只能通过命令触发。${i18n("默认：")}${DEFAULT_SETTINGS.triggers}
+        </span>`))
+        .addTextArea(text => text
+          .setValue(this.plugin.settings.triggers.join('\n'))
+          .onChange(async (value) => {
+            let arr = value.split('\n')
+            this.plugin.settings.triggers = arr.filter(v=>v)
             this.plugin.saveSettings()
-            this.display()
-          }).open()
-        })
+          })
+          .then(() => {
+            text.inputEl.className = 'scp input'
+            text.inputEl.style.width = '100%'
+            text.inputEl.style.height = 'auto'
+            text.inputEl.style.minHeight = '2em'
+            // text.inputEl.style.resize = 'none'
+            // todo
+          })
+        )
       )
-      .addButton(button => button
-        .setButtonText(i18n("编辑"))
-        .setCta()
-        .onClick(async () => {
-          new ChooseCommmandModal(this.app, this.getCommands(), (command, evt) => {
-            new InputModal(
-              this.app, i18n("编辑"), command.name,
-              this.plugin.settings.cmdAliases[command.id],
-              value => {
-                this.plugin.settings.cmdAliases[command.id] = value
-                this.plugin.saveSettings()
-                this.display()
+      .addSetting(setting=>setting.setName(i18n("显示描述"))
+        .setDesc(`${i18n("默认：")}${DEFAULT_SETTINGS.cmdrShowDesc}`)
+        .addToggle(cp => cp
+          .setValue(this.plugin.settings.cmdrShowDesc)
+          .onChange(async (value) => {
+            this.plugin.settings.cmdrShowDesc = value
+            this.plugin.saveSettings()
+          })
+        )
+      )
+      .addSetting(setting=>setting.setName(i18n("无选项自动关闭"))
+        .setDesc(`${i18n("检索不到命令时自动关闭，")}${i18n("默认：")}${DEFAULT_SETTINGS.cmdrAutoClose}`)
+        .addToggle(cp => cp
+          .setValue(this.plugin.settings.cmdrAutoClose)
+          .onChange(async (value) => {
+            this.plugin.settings.cmdrAutoClose = value
+            this.plugin.saveSettings()
+          })
+        )
+      )
+    new SettingGroup(containerEl).setHeading(i18n("命令查询"))
+      .addSetting(setting=>setting.setName(i18n("查询语法"))
+        .setDesc(this.createDF(`<span>
+  空格 首空格后内容作为查询参数，空格分隔参数<br>
+  查询参数通过<code>app.plugins.plugins['s-c-panel'].q_args</code>访问<br>
+  ?/？ 强制显示描述<br>
+  !/！ 强制显示隐藏
+        </span>`))
+        .then(s => s.descEl.style.userSelect='text')
+      )
+    new SettingGroup(containerEl).setHeading(i18n("别名管理"))
+      .addSetting(setting=>setting.setName(i18n("命令别名"))
+        .setDesc(this.createDF(`<span>
+${i18n("格式说明：")}<code>${i18n("[隐藏部分]显示名称{描述内容}")}</code><br>
+${i18n("示例：")}<code>[save]保存当前文件{保存当前编辑的文件}</code>
+        </span>`))
+        .addButton(button=>button.setButtonText(i18n("添加"))
+          .setCta()
+          .onClick(async () => {
+            let arr = this.app.commands.listCommands()
+            let aliases = this.plugin.settings.cmdAliases
+            let commands = arr.reduce((acc, command) => {
+              if (!Object.keys(aliases).includes(command.id)) {
+                acc.push(command)
               }
-            ).open()
-          }).open()
-        })
+              return acc
+            }, [])
+            new ChooseCommmandModal(this.app, commands, (command, evt) => {
+              this.plugin.settings.cmdAliases[command.id] = command.name
+              this.plugin.saveSettings()
+              this.display()
+            }).open()
+          })
+        )
+        .addButton(button=>button.setButtonText(i18n("编辑"))
+          .setCta()
+          .onClick(async () => {
+            new ChooseCommmandModal(this.app, this.getCommands(), (command, evt) => {
+              new InputModal(
+                this.app, i18n("编辑"), command.name,
+                this.plugin.settings.cmdAliases[command.id],
+                value => {
+                  this.plugin.settings.cmdAliases[command.id] = value
+                  this.plugin.saveSettings()
+                  this.display()
+                }
+              ).open()
+            }).open()
+          })
+        )
+        .addButton(button=>button.setButtonText(i18n("删除"))
+          .setCta().setWarning()
+          .onClick(async () => {
+            new ChooseCommmandModal(this.app, this.getCommands(), (cmd, evt) => this.deleteAlias(cmd.id)).open()
+          })
+        )
       )
-      .addButton(button => button
-        .setButtonText(i18n("删除"))
-        .setCta()
-        .setWarning()
-        .onClick(async () => {
-          new ChooseCommmandModal(this.app, this.getCommands(), (cmd, evt) => this.deleteAlias(cmd.id)).open()
-        })
-      )
+      .addSetting(setting=>setting.then(view=>view.infoEl.remove())
+        .then(_ => {
+          const scrollEl = setting.controlEl
+          scrollEl.style.display = 'grid'
+          scrollEl.style.gridTemplateColumns = '2em 1fr 1.5fr'
+          scrollEl.style.gridAutoRows = '2rem'
+          scrollEl.style.overflowY = 'auto'
+          scrollEl.style.width = '100%'
+          scrollEl.style.maxHeight = '30vh'
+          const aliases = this.plugin.settings.cmdAliases
+          Object.keys(aliases).forEach(id => {
+            const cmd = this.app.commands.commands[id]
 
-    let view = new Setting(containerEl)
-    view.infoEl.remove()
-    let scrollEl = view.controlEl
-    scrollEl.style.display = 'grid'
-    scrollEl.style.gridTemplateColumns = '2em 1fr 1.5fr'
-    scrollEl.style.gridAutoRows = '2rem'
-    scrollEl.style.overflowY = 'auto'
-    scrollEl.style.width = '100%'
-    scrollEl.style.maxHeight = '30vh'
-    let aliases = this.plugin.settings.cmdAliases
-    Object.keys(aliases).forEach(id => {
-      const cmd = this.app.commands.commands[id]
-      
-      const delBtnEl =  scrollEl.createEl('button')
-      delBtnEl.textContent = 'Х'
-      delBtnEl.type = 'button'
-      delBtnEl.onclick = (() => {
-        new YNModal(app, i18n("确认删除？"), cmd.name, () => this.deleteAlias(id)).open()
-      })
-      delBtnEl.style.height = '2rem'
-      delBtnEl.style.width = '2rem'
-      
-      const nameEl =  scrollEl.createEl('span')
-      nameEl.textContent = cmd.name
-      nameEl.style.color = 'rgb(255, 153, 153)'
-      nameEl.style.fontWeight = 'bold'
-      nameEl.style.textAlign = 'left'
-      nameEl.style.whiteSpace = 'nowrap'
-      nameEl.style.overflowX = 'auto'
-      
-      const inputEl = scrollEl.createEl('input')
-      inputEl.type = 'text'
-      inputEl.value = aliases[id]
-      inputEl.onchange = (async () => {
-        inputEl.value = inputEl.value.replace(/\s+/g, '')
-        aliases[id] = inputEl.value
-        this.plugin.saveSettings()
-      })
-    })
-    
-    new Setting(containerEl)
-      .setName(i18n("文本别名"))
+            const delBtnEl =  scrollEl.createEl('button')
+            delBtnEl.textContent = 'Х'
+            delBtnEl.type = 'button'
+            delBtnEl.onclick = (() => {
+              new YNModal(app, i18n("确认删除？"), cmd.name, () => this.deleteAlias(id)).open()
+            })
+            delBtnEl.style.height = '2rem'
+            delBtnEl.style.width = '2rem'
+            
+            const nameEl =  scrollEl.createEl('span')
+            nameEl.textContent = cmd.name
+            nameEl.style.color = 'rgb(255, 153, 153)'
+            nameEl.style.fontWeight = 'bold'
+            nameEl.style.textAlign = 'left'
+            nameEl.style.whiteSpace = 'nowrap'
+            nameEl.style.overflowX = 'auto'
+            
+            const inputEl = scrollEl.createEl('input')
+            inputEl.type = 'text'
+            inputEl.value = aliases[id]
+            inputEl.onchange = (async () => {
+              inputEl.value = inputEl.value.replace(/\s+/g, '')
+              aliases[id] = inputEl.value
+              this.plugin.saveSettings()
+            })
+          })
+        })
+      )
+    .addSetting(setting=>setting.setName(i18n("文本别名"))
       .setDesc(this.createDF(`<span>
 一行一个，触发文本替换，替换文本前后不应有空格<br>
 替换文本中可用<code>\\$ \\n \\\\</code>转义<br>
-${i18n("格式说明：")}<code>[隐藏部分]显示名称{描述内容} $替换文本</code>
+${i18n("格式说明：")}<code>${i18n("[隐藏部分]显示名称{描述内容}")} $${i18n("替换文本")}</code>
       `))
       .addTextArea(text => text
         .setValue(this.plugin.settings.textAliases.join('\n'))
@@ -644,6 +646,7 @@ ${i18n("格式说明：")}<code>[隐藏部分]显示名称{描述内容} $替换
           // todo
         })
       )
+    )
   }
 }
 

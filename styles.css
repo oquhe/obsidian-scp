@@ -3,26 +3,9 @@
   border: 1px solid var(--background-modifier-border);
   border-radius: 5px;
 }
-
 .scp.desc {
   font-size: var(--font-ui-smaller);
   color: var(--text-muted);
-}
-
-.scp.scroller {
-  overflow-y: auto;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  min-height: 50px;
-  max-height: 50%;
-  height: auto;
-  box-sizing: border-box;
-}
-.scp.scroller > * {
-  margin-top: 0;
-  margin-bottom: 0;
 }
 
 .scp.cmdr {
