@@ -207,7 +207,7 @@ class ScpEditorSuggest extends EditorSuggest {
       let text = arr.at(-1)
         .replace(/([^\\]|^)\\n/g, '$1\n')
         .replace(/([^\\]|^)\\([$\\])/g, '$1$2')
-      const match = text.match(/(.*)\(([^(]*)\)$/)
+      const match = text.match(/^([\s\S]*)\(([^(]*)\)$/)
       let cursorMove = -1
       if (match) {
         text = match[1]
