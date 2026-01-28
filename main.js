@@ -21,10 +21,55 @@ const DEFAULT_SETTINGS = {
   cmdrShowDesc: true,
   cmdrAutoClose: true,
   cmdAliases: {},
-  textAliases: [],
+  scriptAliases: [],
 }
 
+const DESC = {
+  triggers: '支持多个，一行一个。也能通过命令触发。<br>',
+  cmdrAutoClose: '检索不到命令时自动关闭。<br>',
+  ['查询语法']: `
+空格 首空格后内容作为查询参数，空格分隔参数<br>
+查询参数访问：<strong>app.plugins.plugins['s-c-panel'].q_args</strong><br>
+?/？ 强制显示描述<br>
+!/！ 强制显示隐藏
+  `,
+  cmdAliases: `
+格式说明：<strong>[隐藏部分]显示名称{描述内容}</strong><br>
+示例：[save]保存当前文件{保存当前编辑的文件}
+  `,
+  scriptAliases: `
+格式说明：<strong>[隐藏部分]显示名称{描述内容} $脚本</strong><br>'
+支持多个，一行一个。脚本前后不应有空格。<br>
+脚本中可用转义：<strong>\\$ \\\\</strong>
+  `
+}
 const I18N = {
+  [DESC.triggers]: {
+    en: 'Support multiple, one per line. It can also be triggered through commands. <br>'
+  },
+  [DESC.cmdrAutoClose]: {
+    en: ''
+  },
+  [DESC['查询语法']]: {
+    en: `
+Space: The content after the first space is used as the query args, separated by spaces<br>
+Access query args: <strong>app.plugins.plugins['s-c-panel'].q_args</strong><br>
+?/？: Force display desc content<br>
+!/！: Force display hide content
+    `
+  },
+  [DESC.cmdAliases]: {
+    en: `
+Format specifies: <strong>[Hidden]Displayed{Desc}</strong>
+    `
+  },
+  [DESC.scriptAliases]: {
+    en: `
+Format specifies: <strong>[Hidden]Displayed{Desc} $<em>Script</em></strong><br>
+Support multiple, one per line. Without spaces before and after the <em>Script</em>. <br>
+Available escapes in the <em>Script</em>: <strong>\\$ \\\\</strong>
+    `
+  },
   '打开': {
     en: 'Open'
   },
@@ -58,8 +103,11 @@ const I18N = {
   '无选项自动关闭': {
     en: 'Auto close without options'
   },
-  '格式说明：': {
-    en: 'Format specifies: '
+  '命令查询': {
+    en: 'Commands Query'
+  },
+  '查询语法': {
+    en: 'Instructions'
   },
   '别名管理': {
     en: 'Manage aliases'
@@ -67,33 +115,12 @@ const I18N = {
   '命令别名': {
     en: 'Give commands aliases'
   },
-  '文本别名': {
-    en: 'Give texts aliases'
+  '脚本别名': {
+    en: 'Give scripts aliases'
   },
-  '检索不到命令时自动关闭，': {
-    en: ''
+  '确认删除？': {
+    en: 'Confirm deletion? '
   },
-  '[隐藏部分]显示名称{描述内容}': {
-    en: '[hidden]displayed{desc}'
-  },
-  '替换文本(光标位置)': {
-    en: 'The replacement text(Cursor position)'
-  },
-  '替换文本中可用转义：': {
-    en: 'Available escapes in the replacement text: '
-  },
-  '示例：[save]保存当前文件{保存当前编辑的文件}': {
-    en: ''
-  },
-  '支持多个，一行一个。': {
-    en: 'Support multiple, one per line. '
-  },
-  '也能通过命令触发。': {
-    en: 'It can also be triggered through commands. '
-  },
-  '替换文本前后不应有空格。': {
-    en: 'Without spaces before and after the replacement text. '
-  }
 }
 function i18n(text) {
   const translation = I18N?.[text]
@@ -156,12 +183,6 @@ exports.default = class ScpPlugin extends Plugin {
   
 }
 
-/*
-function escape(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-*/
-
 /**
  * 命令项编辑建议
  */
@@ -173,60 +194,95 @@ class ScpEditorSuggest extends EditorSuggest {
   }
   getItems() {
     const cmds = this.app.commands.listCommands()
-    return cmds.concat(this.textCmds)
+    return cmds.concat(this.scriptCmds)
   }
   getItemText(cmd) {
-    // if (!cmd.id) return cmd.name
     return (cmd.id in this.aliases)
       ? this.aliases[cmd.id]
       : cmd.name
   }
-  editorFromCursor(text, cursorMove=-1) {
-    const view = this.app.workspace.getActiveViewOfType(MarkdownView)
-    if (view) {
-      const editorView =view.editor.cm
-      const cursor = editorView.state.selection.ranges[0]
-      let pos = cursor.to + (cursorMove<0?(text.length+cursorMove+1):cursorMove)
-      if (pos<cursor.to || pos>cursor.to+text.length) pos = cursor.to+text.length
-      editorView.dispatch({
-        changes: {
-          from: cursor.from, to: cursor.to, insert: text
-        },
-        selection: {anchor: pos, head: pos},
-        userEvent: 'input.paste'
-      })
+
+  exec(text, parsed=false) {
+    try {
+      const obj = parsed ? text : JSON.parse(text)
+      //console.log({obj, type: (typeof obj)})
+      if (typeof obj === 'string') {
+        this.editorFromCursor(obj)
+        return
+      }
+      if (typeof obj === 'number') {
+        if (Number.isInteger(obj)) {
+          this.moveCursor(obj)
+          return
+        }
+      }
+      if (Array.isArray(obj)) {
+        obj.forEach(o => this.exec(o, true))
+        return
+      }
+      if (obj.constructor === Object) {
+        const tag = obj?.tag
+        if (typeof tag !== 'string') return
+        switch (tag.toLowerCase()) {
+          case 'cmd':
+          case 'command':
+            this.execCmd(obj)
+            break
+        }
+        return
+      }
+    } catch (e) {
+      if (!(e instanceof SyntaxError)) return
     }
+    this.editorFromCursor(text)
   }
-  processAliases(cmdAliases, textAliases) {
+  execCmd(obj) {
+    const cmds = this.app.commands.listCommands()
+    let cmd
+    if (obj?.id) cmd = cmds.find(c=>c.id===obj.id)
+    if (!cmd && obj?.name) cmd = cmds.find(c=>c.name===obj.name)
+    if (!cmd) return
+    this.q_args = obj?.args
+    this.plugin.q_args = this.q_args
+    this.app.commands.executeCommand(cmd)
+    this.q_args = []
+    this.plugin.q_args = []
+  }
+  editorFromCursor(text) {
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView)
+    if (!view) return
+    view.editor.replaceSelection(text, 'input.complete')
+  }
+  moveCursor(int) {
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView)
+    if (!view) return
+    const editor = view.editor
+    const cursor = editor.getCursor()
+    editor.setCursor(editor.offsetToPos(editor.posToOffset(cursor)+int))
+  }
+
+  processAliases(cmdAliases, scriptAliases) {
     let aliases = cmdAliases
-    let textCmds = []
-    textAliases.forEach(textAlias => {
-      const arr = textAlias.split(/[^\\]\$/)
+    let scriptCmds = []
+    scriptAliases.forEach(scriptAlias => {
+      const arr = scriptAlias.split(/[^\\]\$/)
       if (arr.length < 2) return
       const name = arr.slice(0, -1).join('').trim()
       let text = arr.at(-1)
-        .replace(/([^\\]|^)\\n/g, '$1\n')
         .replace(/([^\\]|^)\\([$\\])/g, '$1$2')
-      const match = text.match(/^([\s\S]*)\(([^(]*)\)$/)
-      let cursorMove = -1
-      if (match) {
-        text = match[1]
-        cursorMove = parseInt(match[2])
-        if (isNaN(cursorMove)) cursorMove = -1
-      }
-      textCmds.push({ id: null, name: name,
-        callback: ()=>this.editorFromCursor(text, cursorMove)
+      scriptCmds.push({ id: null, name: name,
+        callback: ()=>this.exec(text)
       })
     })
-    return {aliases, textCmds}
+    return {aliases, scriptCmds}
   }
   constructor(app, plugin) {
     super(app)
     this.plugin = plugin
     this.triggers = this.plugin.settings.triggers
-    const { aliases, textCmds } = this.processAliases(this.plugin.settings.cmdAliases, this.plugin.settings.textAliases)
+    const { aliases, scriptCmds } = this.processAliases(this.plugin.settings.cmdAliases, this.plugin.settings.scriptAliases)
     this.aliases = aliases
-    this.textCmds = textCmds
+    this.scriptCmds = scriptCmds
     this.fuzzyMatch = new FuzzyMatch(this.app, this)
   }
   cmdTrigger(editor, ctx) {
@@ -244,9 +300,9 @@ class ScpEditorSuggest extends EditorSuggest {
     this.trigger(editor, ctx, true)
   }
   open() {
-    const { aliases, textCmds } = this.processAliases(this.plugin.settings.cmdAliases, this.plugin.settings.textAliases)
+    const { aliases, scriptCmds } = this.processAliases(this.plugin.settings.cmdAliases, this.plugin.settings.scriptAliases)
     this.aliases = aliases
-    this.textCmds = textCmds
+    this.scriptCmds = scriptCmds
     super.open()
   }
   close() {
@@ -504,10 +560,10 @@ class ScpSettingTab extends PluginSettingTab {
     containerEl.empty()
     new SettingGroup(containerEl)
       .addSetting(setting=>setting.setName(i18n("触发符"))
-        .setDesc(this.createDF(`<span>
-${i18n("支持多个，一行一个。")}${i18n("也能通过命令触发。")}<br>
+        .setDesc(this.createDF(`
+${i18n(DESC.triggers)}
 ${i18n("默认：")}${DEFAULT_SETTINGS.triggers}
-        </span>`))
+        `))
         .addTextArea(text => text
           .setValue(this.plugin.settings.triggers.join('\n'))
           .onChange(async (value) => {
@@ -517,11 +573,6 @@ ${i18n("默认：")}${DEFAULT_SETTINGS.triggers}
           })
           .then(() => {
             text.inputEl.className = 'scp input'
-            text.inputEl.style.width = '100%'
-            text.inputEl.style.height = 'auto'
-            text.inputEl.style.minHeight = '2em'
-            // text.inputEl.style.resize = 'none'
-            // todo
           })
         )
       )
@@ -536,7 +587,10 @@ ${i18n("默认：")}${DEFAULT_SETTINGS.triggers}
         )
       )
       .addSetting(setting=>setting.setName(i18n("无选项自动关闭"))
-        .setDesc(`${i18n("检索不到命令时自动关闭，")}${i18n("默认：")}${DEFAULT_SETTINGS.cmdrAutoClose}`)
+        .setDesc(this.createDF(`
+${i18n(DESC.cmdrAutoClose)}
+${i18n("默认：")}${DEFAULT_SETTINGS.cmdrAutoClose}
+       `))
         .addToggle(cp => cp
           .setValue(this.plugin.settings.cmdrAutoClose)
           .onChange(async (value) => {
@@ -547,20 +601,12 @@ ${i18n("默认：")}${DEFAULT_SETTINGS.triggers}
       )
     new SettingGroup(containerEl).setHeading(i18n("命令查询"))
       .addSetting(setting=>setting.setName(i18n("查询语法"))
-        .setDesc(this.createDF(`<span>
-  空格 首空格后内容作为查询参数，空格分隔参数<br>
-  查询参数通过<code>app.plugins.plugins['s-c-panel'].q_args</code>访问<br>
-  ?/？ 强制显示描述<br>
-  !/！ 强制显示隐藏
-        </span>`))
+        .setDesc(this.createDF(i18n(DESC['查询语法'])))
         .then(s => s.descEl.style.userSelect='text')
       )
     new SettingGroup(containerEl).setHeading(i18n("别名管理"))
       .addSetting(setting=>setting.setName(i18n("命令别名"))
-        .setDesc(this.createDF(`<span>
-${i18n("格式说明：")}<code>${i18n("[隐藏部分]显示名称{描述内容}")}</code><br>
-${i18n("示例：[save]保存当前文件{保存当前编辑的文件}")}
-        </span>`))
+        .setDesc(this.createDF(i18n(DESC.cmdAliases)))
         .addButton(button=>button.setButtonText(i18n("添加"))
           .setCta()
           .onClick(async () => {
@@ -639,22 +685,18 @@ ${i18n("示例：[save]保存当前文件{保存当前编辑的文件}")}
           })
         })
       })
-      .addSetting(setting=>setting.setName(i18n("文本别名"))
-        .setDesc(this.createDF(`<span>
-${i18n("支持多个，一行一个。")}${i18n("替换文本前后不应有空格。")}<br>
-${i18n("替换文本中可用转义：")}<code>\\$ \\n \\\\</code><br>
-${i18n("格式说明：")}<code>${i18n("[隐藏部分]显示名称{描述内容}")} $${i18n("替换文本(光标位置)")}</code>
-        `))
+      .addSetting(setting=>setting.setName(i18n("脚本别名"))
+        .setDesc(this.createDF(i18n(DESC.scriptAliases)))
       )
       .addSetting(setting=>{
         setting.infoEl.remove()
         setting.settingEl.style.border='none'
         setting.addTextArea(text => text
-          .setValue(this.plugin.settings.textAliases.join('\n'))
+          .setValue(this.plugin.settings.scriptAliases.join('\n'))
           .onChange(async (value) => {
             let arr = value.split('\n')
             text.inputEl.style.height = `${Math.min((Math.max(3,arr.length)),8)}lh`
-            this.plugin.settings.textAliases = arr.filter(v=>v)
+            this.plugin.settings.scriptAliases = arr.filter(v=>v)
             this.plugin.saveSettings()
           })
           .then(() => {
