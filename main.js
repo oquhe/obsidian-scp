@@ -38,9 +38,10 @@ const DESC = {
 示例：[save]保存当前文件{保存当前编辑的文件}
   `,
   scriptAliases: `
-格式说明：<strong>[隐藏部分]显示名称{描述内容} $脚本</strong><br>'
-支持多个，一行一个。脚本前后不应有空格。<br>
-脚本中可用转义：<strong>\\$ \\\\</strong>
+格式说明：<strong>[隐藏部分]显示名称{描述内容} $脚本</strong><br>
+支持多个，一行一个。<br>
+<a href='https://github.com/oquhe/obsidian-scp/blob/master/README.md#%E8%84%9A%E6%9C%AC'>
+脚本</a>使用 JSON 格式，可用转义：<strong>\\$ \\\\</strong>
   `
 }
 const I18N = {
@@ -66,8 +67,9 @@ Format specifies: <strong>[Hidden]Displayed{Desc}</strong>
   [DESC.scriptAliases]: {
     en: `
 Format specifies: <strong>[Hidden]Displayed{Desc} $<em>Script</em></strong><br>
-Support multiple, one per line. Without spaces before and after the <em>Script</em>. <br>
-Available escapes in the <em>Script</em>: <strong>\\$ \\\\</strong>
+Support multiple, one per line. <br>
+<a href='https://github.com/oquhe/obsidian-scp/blob/master/README.md#%E8%84%9A%E6%9C%AC'>
+Script</a> JSON format. Available escapes in the <em>Script</em>: <strong>\\$ \\\\</strong>
     `
   },
   '打开': {
@@ -120,6 +122,9 @@ Available escapes in the <em>Script</em>: <strong>\\$ \\\\</strong>
   },
   '确认删除？': {
     en: 'Confirm deletion? '
+  },
+  '脚本解析错误': {
+    en: 'Script parsing error'
   },
 }
 function i18n(text) {
@@ -203,38 +208,44 @@ class ScpEditorSuggest extends EditorSuggest {
   }
 
   exec(text, parsed=false) {
+    let obj
     try {
-      const obj = parsed ? text : JSON.parse(text)
-      //console.log({obj, type: (typeof obj)})
-      if (typeof obj === 'string') {
-        this.editorFromCursor(obj)
-        return
-      }
-      if (typeof obj === 'number') {
-        if (Number.isInteger(obj)) {
-          this.moveCursor(obj)
-          return
-        }
-      }
-      if (Array.isArray(obj)) {
-        obj.forEach(o => this.exec(o, true))
-        return
-      }
-      if (obj.constructor === Object) {
-        const tag = obj?.tag
-        if (typeof tag !== 'string') return
-        switch (tag.toLowerCase()) {
-          case 'cmd':
-          case 'command':
-            this.execCmd(obj)
-            break
-        }
-        return
-      }
+      obj = parsed ? text : JSON.parse(text)
     } catch (e) {
-      if (!(e instanceof SyntaxError)) return
+      obj = i18n("脚本解析错误")
     }
-    this.editorFromCursor(text)
+    if (typeof obj === 'string') {
+      this.pasteAtCursor(obj)
+      return
+    }
+    if (typeof obj === 'number') {
+      if (Number.isInteger(obj)) {
+        this.moveCursor({ch: obj})
+        return
+      }
+    }
+    if (Array.isArray(obj)) {
+      obj.forEach(o => this.exec(o, true))
+      return
+    }
+    if (obj.constructor === Object) {
+      const tag = obj?.tag
+      if (typeof tag !== 'string') return
+      switch (tag.toLowerCase()) {
+        case 'cmd':
+        case 'command':
+          this.execCmd(obj)
+          break
+        case 'insert':
+          this.insertAtCursor(obj)
+          break
+        case 'move':
+          this.moveCursor(obj)
+          break
+      }
+      return
+    }
+    this.pasteAtCursor(String(text))
   }
   execCmd(obj) {
     const cmds = this.app.commands.listCommands()
@@ -248,17 +259,42 @@ class ScpEditorSuggest extends EditorSuggest {
     this.q_args = []
     this.plugin.q_args = []
   }
-  editorFromCursor(text) {
+  pasteAtCursor(text) {
     const view = this.app.workspace.getActiveViewOfType(MarkdownView)
     if (!view) return
     view.editor.replaceSelection(text, 'input.complete')
   }
-  moveCursor(int) {
+  insertAtCursor(obj) {
+    if (!('text' in obj && typeof obj.text === 'string')) return
+    if (!('ch' in obj && typeof obj.ch === 'number' && Number.isInteger(obj.ch))) {
+      obj.ch = obj.text.length
+    }
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView)
+    if (!view) return
+    const editor = view.editor
+    if (obj.ch < 0) {
+      editor.replaceSelection(obj.text, 'input.complete')
+      let cursor = editor.getCursor()
+      editor.setCursor(editor.offsetToPos(editor.posToOffset(cursor)+obj.ch))
+    } else {
+      let cursor = editor.getCursor()
+      editor.replaceSelection(obj.text, 'input.complete')
+      editor.setCursor(cursor.line, cursor.ch+obj.ch)
+    }
+  }
+  moveCursor(obj) {
+    if (!('ch' in obj && typeof obj.ch === 'number' && Number.isInteger(obj.ch))) {
+      obj.ch = 0
+    }
     const view = this.app.workspace.getActiveViewOfType(MarkdownView)
     if (!view) return
     const editor = view.editor
     const cursor = editor.getCursor()
-    editor.setCursor(editor.offsetToPos(editor.posToOffset(cursor)+int))
+    if ('n' in obj && typeof obj.n === 'number' && Number.isInteger(obj.n)) {
+      editor.setCursor(cursor.line+obj.n, obj.ch)
+    } else {
+      editor.setCursor(editor.offsetToPos(editor.posToOffset(cursor)+obj.ch))
+    }
   }
 
   processAliases(cmdAliases, scriptAliases) {
@@ -702,9 +738,7 @@ ${i18n("默认：")}${DEFAULT_SETTINGS.cmdrAutoClose}
           .then(() => {
             text.inputEl.className = 'scp input'
             text.inputEl.style.width = '100%'
-            text.inputEl.style.height = '2lh'
-            // text.inputEl.style.resize = 'none'
-            // todo
+            text.inputEl.style.height = '3lh'
           })
         )
       })
